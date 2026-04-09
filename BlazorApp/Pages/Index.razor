@@ -1,0 +1,318 @@
+@page "/"
+@using RenewableEnergyBlazor.Models
+@using RenewableEnergyBlazor.Services
+@using RenewableEnergyContracts
+@inject EnergyApiService ApiService
+@implements IDisposable
+
+<PageTitle>Renewable Energy Explorer</PageTitle>
+
+<!-- Header -->
+<div class="header">
+    <div class="header-inner">
+        <div class="logo">
+            <span class="logo-icon">⚡</span>
+            <div>
+                <h1>Renewable Energy Explorer</h1>
+                <p>World Bank Open Data · Renewable Energy : Wind &amp; Solar</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Panel -->
+<div class="container">
+    <div class="search-panel">
+        <h2 class="panel-title">Search Filters</h2>
+
+        <div class="filter-grid">
+            <div class="filter-group">
+                <label>Energy Topic</label>
+                <select @bind="Params.Topic" class="select-input">
+                    <option value="all"> All Renewable Energy</option>
+                    <option value="wind">🌬️ Wind Energy</option>
+                    <option value="solar">☀️ Solar Energy</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Additional Keyword</label>
+                <input value="@Params.Keyword"
+                       @oninput="OnKeywordInput"
+                       placeholder="e.g. capacity, policy, grid..."
+                       class="text-input"
+                       @onkeydown="HandleKeyDown" />
+            </div>
+
+            <div class="filter-group">
+                <label>Country</label>
+                <input @bind="Params.Country" placeholder="e.g. India, Germany, Brazil..."
+                       class="text-input" />
+            </div>
+
+            <div class="filter-group">
+                <label>Results Per Page</label>
+                <select @bind="Params.PageSize" class="select-input">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Published From</label>
+                <input type="date" @bind="Params.StartDate" class="text-input" />
+            </div>
+
+            <div class="filter-group">
+                <label>Published To</label>
+                <input type="date" @bind="Params.EndDate" class="text-input" />
+            </div>
+        </div>
+
+        @if (DateValidationError is not null)
+        {
+            <div class="date-error">@DateValidationError</div>
+        }
+
+        <div class="search-actions">
+            <button class="btn btn-primary" @onclick="DoSearch" disabled="@IsLoading">
+                @if (IsLoading) { <span class="spinner"></span> } else { <span>🔍</span> }
+                @(IsLoading ? " Searching..." : " Search")
+            </button>
+            <button class="btn btn-secondary" @onclick="ResetFilters">↺ Reset</button>
+        </div>
+    </div>
+
+    @if (Result?.HasError == true)
+    {
+        <div class="error-banner">
+            ⚠️ @Result.ErrorMessage
+        </div>
+    }
+
+    <!-- Results area with aria-live for screen readers -->
+    <div aria-live="polite">
+        @if (Result?.Documents.Count > 0)
+        {
+            <div class="results-summary">
+                <span>
+                    Showing <strong>@((Params.Page - 1) * Params.PageSize + 1)–@(Math.Min(Params.Page * Params.PageSize, Result.Pagination!.TotalResults))</strong>
+                    of <strong>@Result.Pagination!.TotalResults</strong> results
+                    for topic: <span class="topic-tag">@Params.Topic</span>
+                </span>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th @onclick='() => SetSort("Title")' class="sortable"
+                                aria-sort="@AriaSort("Title")">
+                                Title @SortIcon("Title")
+                            </th>
+                            <th @onclick='() => SetSort("DatePublished")' class="sortable"
+                                aria-sort="@AriaSort("DatePublished")">
+                                Published @SortIcon("DatePublished")
+                            </th>
+                            <th @onclick='() => SetSort("Country")' class="sortable"
+                                aria-sort="@AriaSort("Country")">
+                                Country @SortIcon("Country")
+                            </th>
+                            <th>Topic</th>
+                            <th>Type</th>
+                            <th>Link</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var doc in Result.Documents)
+                        {
+                            <tr>
+                                <td class="title-cell" title="@doc.Abstract">
+                                    @(doc.Title.Length > 80 ? doc.Title[..80] + "…" : doc.Title)
+                                </td>
+                                <td>@FormatDate(doc.DatePublished)</td>
+                                <td>@(doc.Country ?? "—")</td>
+                                <td>
+                                    <span class="badge @TopicClass(doc.Topic)">@(doc.Topic ?? "—")</span>
+                                </td>
+                                <td>@(doc.DocumentType ?? "—")</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(doc.Url))
+                                    {
+                                        <a href="@doc.Url" target="_blank" class="doc-link">View ↗</a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Result.Pagination!.TotalPages > 1)
+            {
+                <div class="pagination">
+                    <button class="page-btn" @onclick="PrevPage"
+                            disabled="@(Params.Page <= 1)">← Prev</button>
+
+                    @for (int i = PageRangeStart; i <= PageRangeEnd; i++)
+                    {
+                        var pg = i;
+                        <button class="page-btn @(pg == Params.Page ? "active" : "")"
+                                @onclick="() => GoToPage(pg)">@pg</button>
+                    }
+
+                    <button class="page-btn" @onclick="NextPage"
+                            disabled="@(Params.Page >= Result.Pagination.TotalPages)">Next →</button>
+
+                    <span class="page-info">
+                        Page @Params.Page of @Result.Pagination.TotalPages
+                    </span>
+                </div>
+            }
+        }
+        else if (HasSearched && !IsLoading && Result?.HasError != true)
+        {
+            <div class="empty-state">
+                <p>🔎 No documents found. Try broadening your search filters.</p>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private SearchParameters Params { get; set; } = new();
+    private SearchResult? Result { get; set; }
+    private bool IsLoading { get; set; }
+    private bool HasSearched { get; set; }
+    private string? DateValidationError { get; set; }
+
+    private CancellationTokenSource? _debounceCts;
+
+    protected override async Task OnInitializedAsync() => await RunSearch();
+
+    private bool ValidateDates()
+    {
+        if (Params.StartDate.HasValue && Params.EndDate.HasValue && Params.StartDate > Params.EndDate)
+        {
+            DateValidationError = "Start date must be before end date.";
+            return false;
+        }
+        DateValidationError = null;
+        return true;
+    }
+
+    private async Task RunSearch(bool resetPage = true)
+    {
+        if (!ValidateDates()) return;
+
+        if (resetPage) Params.Page = 1;
+        IsLoading   = true;
+        HasSearched = true;
+        StateHasChanged();
+        Result    = await ApiService.SearchAsync(Params);
+        IsLoading = false;
+    }
+
+    private async Task DoSearch() => await RunSearch(resetPage: true);
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await DoSearch();
+    }
+
+    private void OnKeywordInput(ChangeEventArgs e)
+    {
+        Params.Keyword = e.Value?.ToString() ?? "";
+
+        _debounceCts?.Cancel();
+        _debounceCts = new CancellationTokenSource();
+        var token = _debounceCts.Token;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(400, token);
+                await InvokeAsync(async () =>
+                {
+                    await RunSearch(resetPage: true);
+                    StateHasChanged();
+                });
+            }
+            catch (TaskCanceledException) { }
+        }, token);
+    }
+
+    private void ResetFilters()
+    {
+        Params             = new SearchParameters();
+        Result             = null;
+        HasSearched        = false;
+        DateValidationError = null;
+    }
+
+    private async Task SetSort(string column)
+    {
+        Params.SortOrder = Params.SortBy == column && Params.SortOrder == "asc" ? "desc" : "asc";
+        Params.SortBy    = column;
+        await RunSearch(resetPage: true);
+    }
+
+    private string SortIcon(string column)
+    {
+        if (Params.SortBy != column) return "⇅";
+        return Params.SortOrder == "asc" ? "↑" : "↓";
+    }
+
+    private string AriaSort(string column)
+    {
+        if (Params.SortBy != column) return "none";
+        return Params.SortOrder == "asc" ? "ascending" : "descending";
+    }
+
+    private async Task PrevPage()
+    {
+        if (Params.Page > 1) { Params.Page--; await RunSearch(resetPage: false); }
+    }
+
+    private async Task NextPage()
+    {
+        if (Result?.Pagination != null && Params.Page < Result.Pagination.TotalPages)
+        {
+            Params.Page++;
+            await RunSearch(resetPage: false);
+        }
+    }
+
+    private async Task GoToPage(int page)
+    {
+        Params.Page = page;
+        await RunSearch(resetPage: false);
+    }
+
+    private int PageRangeStart => Math.Max(1, Params.Page - 2);
+    private int PageRangeEnd   =>
+        Result?.Pagination == null ? 1 : Math.Min(Result.Pagination.TotalPages, Params.Page + 2);
+
+    private static string FormatDate(string? raw)
+    {
+        if (string.IsNullOrEmpty(raw)) return "—";
+        return DateTime.TryParse(raw, out var dt) ? dt.ToString("MMM yyyy") : raw;
+    }
+
+    private static string TopicClass(string? topic) => topic?.ToLower() switch
+    {
+        "wind"           => "badge-wind",
+        "solar"          => "badge-solar",
+        "wind & solar"   => "badge-both",
+        _                => "badge-other"
+    };
+
+    public void Dispose()
+    {
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+    }
+}

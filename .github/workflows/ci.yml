@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main, development]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release --logger "trx;LogFileName=test-results.trx" --verbosity normal
+
+      - name: Test Report Summary
+        if: always()
+        run: |
+          echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f API.Tests/TestResults/test-results.trx ]; then
+            passed=$(grep -oP 'passed="\K[0-9]+' API.Tests/TestResults/test-results.trx | head -1)
+            failed=$(grep -oP 'failed="\K[0-9]+' API.Tests/TestResults/test-results.trx | head -1)
+            total=$(grep -oP 'total="\K[0-9]+' API.Tests/TestResults/test-results.trx | head -1)
+            echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Total  | ${total:-0} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Passed | ${passed:-0} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Failed | ${failed:-0} |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No test results file found." >> $GITHUB_STEP_SUMMARY
+          fi

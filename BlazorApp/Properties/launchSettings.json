@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "BlazorApp": {
+      "commandName": "Project",
+      "applicationUrl": "http://localhost:5002"
+    }
+  }
+}

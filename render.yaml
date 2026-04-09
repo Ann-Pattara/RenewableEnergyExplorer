@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: renewable-energy-explorer
+    runtime: docker
+    # Render auto-detects the Dockerfile at the repo root.
+    # It injects PORT at runtime; Program.cs reads it to bind Kestrel.
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+    healthCheckPath: /api/energy/health
+    plan: free

@@ -1,0 +1,22 @@
+# Build output
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+.vs/
+
+# Rider
+.idea/
+
+# macOS
+.DS_Store
+
+# Claude Code
+.claude/
+
+# Environment / secrets
+*.env
+appsettings.*.json
+!appsettings.json
