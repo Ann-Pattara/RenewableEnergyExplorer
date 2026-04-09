@@ -4,11 +4,11 @@ using RenewableEnergyContracts;
 
 namespace RenewableEnergyBlazor.Services;
 
-/// <summary>
+
 /// Fetches renewable energy documents from the API.
-/// All paths are relative — the HttpClient base address is set to the app
+/// All paths are relative - the HttpClient base address is set to the app
 /// origin in Program.cs, so this works identically in dev and production.
-/// </summary>
+
 public class EnergyApiService(HttpClient http, ILogger<EnergyApiService> logger)
 {
     // Relative path — resolves against HttpClient.BaseAddress (the app origin)
