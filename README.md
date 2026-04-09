@@ -1,5 +1,7 @@
 # Renewable Energy Explorer
 
+> **Development branch:** All production-quality improvements (rate limiting, Polly retry, shared contracts, unit tests, CI pipeline, etc.) are on the [`development`](../../tree/development) branch.
+
 A full-stack web application that lets users search and browse World Bank renewable energy research documents (wind & solar). Built with an ASP.NET Core API backend and a Blazor WebAssembly frontend, deployed as a single hosted unit.
 
 ---
