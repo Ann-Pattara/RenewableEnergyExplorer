@@ -46,8 +46,14 @@
 
             <div class="filter-group">
                 <label>Country</label>
-                <input @bind="Params.Country" placeholder="e.g. India, Germany, Brazil..."
-                       class="text-input" />
+                <input @bind="Params.Country" placeholder="Start typing a country name..."
+                       list="country-list" class="text-input" autocomplete="off" />
+                <datalist id="country-list">
+                    @foreach (var country in AvailableCountries)
+                    {
+                        <option value="@country" />
+                    }
+                </datalist>
             </div>
 
             <div class="filter-group">
@@ -187,10 +193,17 @@
     private bool IsLoading { get; set; }
     private bool HasSearched { get; set; }
     private string? DateValidationError { get; set; }
+    private List<string> AvailableCountries { get; set; } = [];
 
     private CancellationTokenSource? _debounceCts;
 
-    protected override async Task OnInitializedAsync() => await RunSearch();
+    protected override async Task OnInitializedAsync()
+    {
+        var countriesTask = ApiService.GetCountriesAsync();
+        var searchTask = RunSearch();
+        await Task.WhenAll(countriesTask, searchTask);
+        AvailableCountries = countriesTask.Result;
+    }
 
     private bool ValidateDates()
     {

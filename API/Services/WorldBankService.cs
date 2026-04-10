@@ -9,6 +9,7 @@ namespace RenewableEnergyAPI.Services;
 public interface IWorldBankService
 {
     Task<(List<EnergyDocument> Documents, int Total)> SearchAsync(EnergySearchQuery query);
+    Task<List<string>> GetCountriesAsync();
 }
 
 public class WorldBankService(
@@ -48,6 +49,39 @@ public class WorldBankService(
         var result = ParseResponse(json, query.Topic.ToLower());
 
         cache.Set(cacheKey, result, CacheDuration);
+        return result;
+    }
+
+    public async Task<List<string>> GetCountriesAsync()
+    {
+        const string cacheKey = "countries_list";
+        if (cache.TryGetValue(cacheKey, out List<string>? cached) && cached is not null)
+            return cached;
+
+        var url = "wds?format=json&display_title=wind+energy+solar&fl=count&rows=1000";
+        logger.LogInformation("Fetching country list from World Bank");
+
+        var response = await http.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadAsStringAsync();
+
+        var countries = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        if (root.TryGetProperty("documents", out var docs))
+        {
+            foreach (var prop in docs.EnumerateObject())
+            {
+                if (prop.Name == "facets") continue;
+                var country = GetString(prop.Value, "count");
+                if (!string.IsNullOrWhiteSpace(country))
+                    countries.Add(country);
+            }
+        }
+
+        var result = countries.OrderBy(c => c).ToList();
+        cache.Set(cacheKey, result, TimeSpan.FromMinutes(30));
         return result;
     }
 

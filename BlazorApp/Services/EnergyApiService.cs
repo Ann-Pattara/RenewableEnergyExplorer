@@ -54,6 +54,20 @@ public class EnergyApiService(HttpClient http, ILogger<EnergyApiService> logger)
         }
     }
 
+    public async Task<List<string>> GetCountriesAsync()
+    {
+        try
+        {
+            var response = await http.GetFromJsonAsync<ApiResponse<List<string>>>("api/energy/countries");
+            return response?.Data ?? [];
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to fetch countries");
+            return [];
+        }
+    }
+
     private static string BuildQueryString(SearchParameters p)
     {
         var parts = new List<string>
