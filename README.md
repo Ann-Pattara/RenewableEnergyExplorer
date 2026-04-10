@@ -65,17 +65,18 @@ RenewableEnergyExplorer/
 │   ├── Controllers/
 │   │   └── EnergyController.cs      # Search, Topics, Health endpoints
 │   ├── Models/
-│   │   └── EnergyModels.cs          # ApiResponse<T>, EnergyDocument, query models
+│   │   └── EnergyModels.cs          # EnergySearchQuery with IValidatableObject
 │   ├── Services/
-│   │   └── WorldBankService.cs      # World Bank API client + response caching
-│   ├── Program.cs                   # Host configuration, DI, middleware pipeline
+│   │   └── WorldBankService.cs      # World Bank API client + Polly retry + caching
+│   ├── Program.cs                   # Host config, rate limiting, exception handler
 │   └── RenewableEnergyAPI.csproj
 │
 ├── BlazorApp/
 │   ├── Models/
-│   │   └── Models.cs                # Client-side models mirroring API contracts
+│   │   └── Models.cs                # Client-side SearchParameters, SearchResult
 │   ├── Pages/
-│   │   └── Index.razor              # Single-page UI: filters, table, pagination
+│   │   ├── Index.razor              # Single-page UI: filters, table, pagination
+│   │   └── Index.razor.css          # Scoped CSS for the UI
 │   ├── Services/
 │   │   └── EnergyApiService.cs      # HTTP client wrapper for the API
 │   ├── wwwroot/
@@ -83,7 +84,16 @@ RenewableEnergyExplorer/
 │   ├── Program.cs                   # Blazor DI setup, HttpClient base address
 │   └── RenewableEnergyBlazor.csproj
 │
-├── Dockerfile                       # Multi-stage build (SDK 10 → ASP.NET 8 runtime)
+├── Contracts/
+│   └── EnergyContracts.cs           # Shared models: ApiResponse<T>, EnergyDocument
+│
+├── API.Tests/
+│   └── EnergyControllerTests.cs     # xUnit tests for the API controller
+│
+├── .github/workflows/
+│   └── ci.yml                       # GitHub Actions CI pipeline
+│
+├── Dockerfile                       # Multi-stage build (SDK 8.0 → ASP.NET 8.0 runtime)
 ├── render.yaml                      # Render.com deployment configuration
 └── README.md
 ```
