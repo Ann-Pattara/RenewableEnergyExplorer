@@ -66,11 +66,10 @@ app.UseExceptionHandler(errorApp =>
 
 app.UseSwagger();
 app.UseSwaggerUI();
-
-app.UseRateLimiter();
-
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
+
+app.UseRateLimiter();
 
 app.UseAuthorization();
 app.MapControllers();
