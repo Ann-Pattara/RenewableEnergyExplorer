@@ -4,11 +4,11 @@ using RenewableEnergyContracts;
 
 namespace RenewableEnergyBlazor.Services;
 
-/// <summary>
+
 /// Fetches renewable energy documents from the API.
-/// All paths are relative — the HttpClient base address is set to the app
+/// All paths are relative - the HttpClient base address is set to the app
 /// origin in Program.cs, so this works identically in dev and production.
-/// </summary>
+
 public class EnergyApiService(HttpClient http, ILogger<EnergyApiService> logger)
 {
     // Relative path — resolves against HttpClient.BaseAddress (the app origin)
@@ -36,12 +36,21 @@ public class EnergyApiService(HttpClient http, ILogger<EnergyApiService> logger)
         catch (HttpRequestException ex)
         {
             logger.LogError(ex, "API request failed");
-            return SearchResult.Empty("Could not reach the energy data API.");
+            var message = ex.StatusCode switch
+            {
+                System.Net.HttpStatusCode.BadRequest           => "Invalid search parameters. Please check your filters and try again.",
+                System.Net.HttpStatusCode.TooManyRequests       => "Too many requests. Please wait a moment and try again.",
+                System.Net.HttpStatusCode.BadGateway            => "The World Bank data source is temporarily unavailable. Please try again shortly.",
+                System.Net.HttpStatusCode.GatewayTimeout        => "The request to the World Bank data source timed out. Please try again.",
+                System.Net.HttpStatusCode.InternalServerError   => "A server error occurred. Please try again later.",
+                _                                               => "Could not reach the energy data API. Please check your connection and try again."
+            };
+            return SearchResult.Empty(message);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unexpected search error");
-            return SearchResult.Empty("An unexpected error occurred.");
+            return SearchResult.Empty("An unexpected error occurred. Please try again later.");
         }
     }
 

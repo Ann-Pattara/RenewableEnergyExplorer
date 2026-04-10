@@ -88,11 +88,11 @@
     @if (Result?.HasError == true)
     {
         <div class="error-banner">
-            ⚠️ @Result.ErrorMessage
+            <strong>Error:</strong> @Result.ErrorMessage
         </div>
     }
 
-    <!-- Results area with aria-live for screen readers -->
+    <!-- Results area -->
     <div aria-live="polite">
         @if (Result?.Documents.Count > 0)
         {
@@ -175,7 +175,7 @@
         else if (HasSearched && !IsLoading && Result?.HasError != true)
         {
             <div class="empty-state">
-                <p>🔎 No documents found. Try broadening your search filters.</p>
+                <p>@EmptyStateMessage()</p>
             </div>
         }
     </div>
@@ -196,7 +196,7 @@
     {
         if (Params.StartDate.HasValue && Params.EndDate.HasValue && Params.StartDate > Params.EndDate)
         {
-            DateValidationError = "Start date must be before end date.";
+            DateValidationError = "'Published From' date must be earlier than 'Published To' date. Please correct the date range.";
             return false;
         }
         DateValidationError = null;
@@ -247,10 +247,24 @@
 
     private void ResetFilters()
     {
-        Params             = new SearchParameters();
-        Result             = null;
-        HasSearched        = false;
+        Params              = new SearchParameters();
+        Result              = null;
+        HasSearched         = false;
         DateValidationError = null;
+    }
+
+    private string EmptyStateMessage()
+    {
+        if (Params.StartDate.HasValue || Params.EndDate.HasValue)
+            return "No documents found for the selected date range. Try adjusting the 'Published From' and 'Published To' dates.";
+
+        if (!string.IsNullOrWhiteSpace(Params.Keyword))
+            return $"No documents found matching \"{Params.Keyword}\". Try a different keyword or remove the keyword filter.";
+
+        if (!string.IsNullOrWhiteSpace(Params.Country))
+            return $"No documents found for country \"{Params.Country}\". Check the spelling or try a different country name.";
+
+        return "No documents found. Try broadening your search filters or selecting a different topic.";
     }
 
     private async Task SetSort(string column)
