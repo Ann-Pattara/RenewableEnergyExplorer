@@ -18,7 +18,7 @@ A full-stack web application that lets users search and browse World Bank renewa
 - Paginated results with configurable page size
 - In-memory response caching (5 min) to reduce upstream API calls
 - Full Swagger / OpenAPI documentation at `/swagger`
-- Single-binary deployment — API serves the Blazor WASM client
+- Single-binary deployment -API serves the Blazor WASM client
 
 ---
 
@@ -30,10 +30,10 @@ Browser
        │  relative fetch calls (same origin, no CORS)
        ▼
 ASP.NET Core API  (:8080)
-  ├─ GET /api/energy/search   — paginated document search
-  ├─ GET /api/energy/topics   — available topic filters
-  ├─ GET /api/energy/health   — health check
-  └─ serves /wwwroot          — Blazor WASM static files
+  ├─ GET /api/energy/search   - paginated document search
+  ├─ GET /api/energy/topics   - available topic filters
+  ├─ GET /api/energy/health   - health check
+  └─ serves /wwwroot          - Blazor WASM static files
        │
        ▼
 World Bank Search API
@@ -104,7 +104,7 @@ RenewableEnergyExplorer/
 
 ### Prerequisites
 
-- [.NET 8 SDK or later](https://dotnet.microsoft.com/download) — check with `dotnet --version`
+- [.NET 8 SDK or later](https://dotnet.microsoft.com/download) - check with `dotnet --version`
 
 ### Start
 
@@ -119,7 +119,7 @@ ASPNETCORE_ENVIRONMENT=Development dotnet run --project API/RenewableEnergyAPI.c
 | `http://localhost:8080/swagger`  | Swagger / OpenAPI docs   |
 | `http://localhost:8080/api/energy/health` | Health check    |
 
-> No second terminal needed — the API and Blazor UI run as a single process.
+> No second terminal needed - the API and Blazor UI run as a single process.
 
 ---
 
@@ -141,10 +141,10 @@ All responses follow a consistent envelope:
 | Parameter   | Type    | Default        | Description                                      |
 |-------------|---------|----------------|--------------------------------------------------|
 | `topic`     | string  | `all`          | `wind`, `solar`, or `all`                        |
-| `keyword`   | string  | —              | Extra keyword appended to the title search       |
-| `country`   | string  | —              | Full country name, e.g. `India`, `Germany`       |
-| `startDate` | string  | —              | Lower date bound (`YYYY-MM-DD`)                  |
-| `endDate`   | string  | —              | Upper date bound (`YYYY-MM-DD`)                  |
+| `keyword`   | string  | -              | Extra keyword appended to the title search       |
+| `country`   | string  | -              | Full country name, e.g. `India`, `Germany`       |
+| `startDate` | string  | -              | Lower date bound (`YYYY-MM-DD`)                  |
+| `endDate`   | string  | -              | Upper date bound (`YYYY-MM-DD`)                  |
 | `page`      | int     | `1`            | 1-based page number                              |
 | `pageSize`  | int     | `10`           | Results per page (max 50)                        |
 | `sortBy`    | string  | `DatePublished`| `DatePublished`, `Title`, or `Country`           |
