@@ -222,27 +222,17 @@
         if (e.Key == "Enter") await DoSearch();
     }
 
-    private void OnKeywordInput(ChangeEventArgs e)
+    private async Task OnKeywordInput(ChangeEventArgs e)
     {
         Params.Keyword = e.Value?.ToString() ?? "";
-
         _debounceCts?.Cancel();
         _debounceCts = new CancellationTokenSource();
-        var token = _debounceCts.Token;
-
-        _ = Task.Run(async () =>
+        try
         {
-            try
-            {
-                await Task.Delay(400, token);
-                await InvokeAsync(async () =>
-                {
-                    await RunSearch(resetPage: true);
-                    StateHasChanged();
-                });
-            }
-            catch (TaskCanceledException) { }
-        }, token);
+            await Task.Delay(400, _debounceCts.Token);
+            await RunSearch(resetPage: true);
+        }
+        catch (TaskCanceledException) { }
     }
 
     private void ResetFilters()
