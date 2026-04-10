@@ -76,6 +76,22 @@ public class EnergyController(IWorldBankService worldBank, ILogger<EnergyControl
         new { Value = "solar", Label = "Solar Energy" }
     }));
 
+    [HttpGet("countries")]
+    [ProducesResponseType(typeof(ApiResponse<List<string>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCountries()
+    {
+        try
+        {
+            var countries = await worldBank.GetCountriesAsync();
+            return Ok(ApiResponse<List<string>>.Ok(countries));
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to fetch country list");
+            return Ok(ApiResponse<List<string>>.Ok(new List<string>()));
+        }
+    }
+
     [HttpGet("health")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult Health() => Ok(new

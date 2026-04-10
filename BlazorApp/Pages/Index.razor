@@ -46,8 +46,14 @@
 
             <div class="filter-group">
                 <label>Country</label>
-                <input @bind="Params.Country" placeholder="e.g. India, Germany, Brazil..."
-                       class="text-input" />
+                <input @bind="Params.Country" placeholder="Start typing a country name..."
+                       list="country-list" class="text-input" autocomplete="off" />
+                <datalist id="country-list">
+                    @foreach (var country in AvailableCountries)
+                    {
+                        <option value="@country" />
+                    }
+                </datalist>
             </div>
 
             <div class="filter-group">
@@ -187,10 +193,17 @@
     private bool IsLoading { get; set; }
     private bool HasSearched { get; set; }
     private string? DateValidationError { get; set; }
+    private List<string> AvailableCountries { get; set; } = [];
 
     private CancellationTokenSource? _debounceCts;
 
-    protected override async Task OnInitializedAsync() => await RunSearch();
+    protected override async Task OnInitializedAsync()
+    {
+        var countriesTask = ApiService.GetCountriesAsync();
+        var searchTask = RunSearch();
+        await Task.WhenAll(countriesTask, searchTask);
+        AvailableCountries = countriesTask.Result;
+    }
 
     private bool ValidateDates()
     {
@@ -222,27 +235,17 @@
         if (e.Key == "Enter") await DoSearch();
     }
 
-    private void OnKeywordInput(ChangeEventArgs e)
+    private async Task OnKeywordInput(ChangeEventArgs e)
     {
         Params.Keyword = e.Value?.ToString() ?? "";
-
         _debounceCts?.Cancel();
         _debounceCts = new CancellationTokenSource();
-        var token = _debounceCts.Token;
-
-        _ = Task.Run(async () =>
+        try
         {
-            try
-            {
-                await Task.Delay(400, token);
-                await InvokeAsync(async () =>
-                {
-                    await RunSearch(resetPage: true);
-                    StateHasChanged();
-                });
-            }
-            catch (TaskCanceledException) { }
-        }, token);
+            await Task.Delay(400, _debounceCts.Token);
+            await RunSearch(resetPage: true);
+        }
+        catch (TaskCanceledException) { }
     }
 
     private void ResetFilters()
