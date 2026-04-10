@@ -168,19 +168,6 @@ Returns `{ "status": "Healthy", "timestamp": "...", "service": "..." }`.
 
 ---
 
-## Deployment
-
-### Render.com (free tier)
-
-1. Push this repository to GitHub.
-2. Go to [render.com](https://render.com) → **New → Web Service**.
-3. Connect your GitHub repository — Render detects `render.yaml` automatically.
-4. Click **Deploy**.
-
-Render builds the Docker image, injects a `PORT` environment variable, and provides a public HTTPS URL (e.g. `https://renewable-energy-explorer.onrender.com`).
-
-> **Note:** The free tier spins down after 15 minutes of inactivity. The first request after a cold start takes ~30 seconds; subsequent requests are fast.
-
 ### Docker (local)
 
 ```bash
@@ -190,19 +177,4 @@ docker run -e PORT=8080 -p 8080:8080 renewable-energy-explorer
 
 ---
 
-## Design Decisions
 
-**Single hosted deployment**
-Rather than separate frontend and backend deployments, the API project references the Blazor project. At publish time, the WASM output is embedded in the API's `wwwroot`. This eliminates CORS entirely and simplifies deployment to a single URL.
-
-**In-memory caching**
-The World Bank Search API has variable latency (~200–800 ms). Identical queries are cached for 5 minutes using `IMemoryCache`, reducing response times for repeated or paginated searches without needing an external cache store.
-
-**Consistent API response envelope**
-Every endpoint returns `ApiResponse<T>` with `success`, `data`, `pagination`, and `message` fields. This means the Blazor client never needs to handle different response shapes and error handling is uniform.
-
-**Data annotations for validation**
-Numeric query parameters (`Page`, `PageSize`) use `[Range]` attributes. ASP.NET Core's `[ApiController]` attribute automatically returns a `400` with structured errors for annotation failures, removing boilerplate validation code from the controller.
-
-**Relative HTTP client base address**
-`EnergyApiService` uses a relative path (`api/energy/search`) against the `HttpClient.BaseAddress`, which is set to `builder.HostEnvironment.BaseAddress` in Blazor's `Program.cs`. This means the same code works in local development and production with no environment-specific configuration.
